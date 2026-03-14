@@ -1,0 +1,2239 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="カバネリ設定推測">
+<meta name="theme-color" content="#0a0a12">
+<title>カバネリ海門決戦 設定推測カウンター</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎰</text></svg>">
+<style>
+  * { box-sizing: border-box; -webkit-tap-highlight-color: rgba(26,107,255,0.15); }
+  html, body, #root { margin: 0; padding: 0; height: 100%; background: #0a0a12; }
+  body { overscroll-behavior: none; -webkit-overflow-scrolling: touch; }
+  input[type="number"]::-webkit-inner-spin-button,
+  input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+  input[type="number"] { -moz-appearance: textfield; }
+  button { -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
+  @supports (padding-top: env(safe-area-inset-top)) {
+    body { padding-top: env(safe-area-inset-top); padding-bottom: env(safe-area-inset-bottom); }
+  }
+</style>
+<script crossorigin src="https://cdnjs.cloudflare.com/ajax/libs/react/18.3.1/umd/react.production.min.js"></script>
+<script crossorigin src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.3.1/umd/react-dom.production.min.js"></script>
+</head>
+<body>
+<div id="root"></div>
+<script>
+const { useState, useEffect, useCallback } = React;
+
+// ── Data Constants ──────────────────────────────────────────────
+const SETTINGS_PROBABILITIES = {
+  initialHit: [{
+    setting: 1,
+    prob: "1/254.2",
+    val: 254.2
+  }, {
+    setting: 2,
+    prob: "1/242.3",
+    val: 242.3
+  }, {
+    setting: 3,
+    prob: "1/239.6",
+    val: 239.6
+  }, {
+    setting: 4,
+    prob: "1/214.0",
+    val: 214.0
+  }, {
+    setting: 5,
+    prob: "1/203.2",
+    val: 203.2
+  }, {
+    setting: 6,
+    prob: "1/195.1",
+    val: 195.1
+  }],
+  st: [{
+    setting: 1,
+    prob: "1/422.5",
+    val: 422.5
+  }, {
+    setting: 2,
+    prob: "1/405.9",
+    val: 405.9
+  }, {
+    setting: 3,
+    prob: "1/398.7",
+    val: 398.7
+  }, {
+    setting: 4,
+    prob: "1/357.2",
+    val: 357.2
+  }, {
+    setting: 5,
+    prob: "1/332.6",
+    val: 332.6
+  }, {
+    setting: 6,
+    prob: "1/318.5",
+    val: 318.5
+  }],
+  shimoBell: [{
+    setting: 1,
+    prob: "1/121.1",
+    val: 121.1
+  }, {
+    setting: 2,
+    prob: "1/114.4",
+    val: 114.4
+  }, {
+    setting: 3,
+    prob: "1/112.8",
+    val: 112.8
+  }, {
+    setting: 4,
+    prob: "1/106.2",
+    val: 106.2
+  }, {
+    setting: 5,
+    prob: "1/104.2",
+    val: 104.2
+  }, {
+    setting: 6,
+    prob: "1/99.1",
+    val: 99.1
+  }]
+};
+const TROPHY_ITEMS = [{
+  id: "bronze",
+  label: "銅",
+  hint: "設定2以上",
+  color: "#CD7F32"
+}, {
+  id: "silver",
+  label: "銀",
+  hint: "設定3以上",
+  color: "#C0C0C0"
+}, {
+  id: "gold",
+  label: "金",
+  hint: "設定4以上",
+  color: "#FFD700"
+}, {
+  id: "kirin",
+  label: "キリン柄",
+  hint: "設定5以上",
+  color: "#E8A317"
+}, {
+  id: "rainbow",
+  label: "虹",
+  hint: "設定6",
+  color: "linear-gradient(90deg,#f00,#ff0,#0f0,#0ff,#00f,#f0f)"
+}];
+const ST_END_SCREENS = [{
+  id: "geta",
+  label: "下駄(デフォルト)",
+  hint: "示唆なし"
+}, {
+  id: "hanami",
+  label: "花見(集合)",
+  hint: "高設定示唆"
+}, {
+  id: "mizugi",
+  label: "水着(無名&菖蒲)",
+  hint: "設定6濃厚"
+}];
+const VOICE_TYPES = [{
+  id: "male",
+  label: "男性キャラ",
+  hint: "設定3・5示唆"
+}, {
+  id: "female",
+  label: "女性キャラ",
+  hint: "設定2・4・6示唆"
+}, {
+  id: "kageno_weak",
+  label: "景之(弱)",
+  hint: "高設定示唆(弱)"
+}, {
+  id: "kageno_mid",
+  label: "景之(中)",
+  hint: "高設定示唆(中)"
+}, {
+  id: "kageno_strong",
+  label: "景之(強)",
+  hint: "高設定示唆(強)"
+}, {
+  id: "mumei_special",
+  label: "無名「やっぱり…」",
+  hint: "設定2以上濃厚"
+}, {
+  id: "no_voice",
+  label: "ボイスなし",
+  hint: "設定5以上濃厚"
+}];
+const CHARA_TYPES = [{
+  id: "male_chara",
+  label: "男性キャラ",
+  hint: "設定3・5示唆"
+}, {
+  id: "female_chara",
+  label: "女性キャラ",
+  hint: "設定2・4・6示唆"
+}, {
+  id: "biba",
+  label: "美馬",
+  hint: "設定4以上濃厚"
+}];
+const KABANERI_ATK_ITEMS = [{
+  id: "atk44",
+  label: "+44",
+  hint: "設定4以上"
+}, {
+  id: "atk55",
+  label: "+55",
+  hint: "設定5以上"
+}, {
+  id: "atk66",
+  label: "+66",
+  hint: "設定6"
+}, {
+  id: "atk77",
+  label: "+77",
+  hint: "設定6"
+}];
+const SPECIAL_DISPLAY = [{
+  id: "disp456",
+  label: "456OVER",
+  hint: "設定4以上"
+}, {
+  id: "disp666",
+  label: "666OVER",
+  hint: "設定6"
+}];
+const OMIKUJI_ITEMS = [{
+  id: "tsuranuki",
+  label: "ツラヌキ筒",
+  hint: "デフォルト"
+}, {
+  id: "mumei_gun",
+  label: "無名の短銃",
+  hint: "デフォルト"
+}, {
+  id: "jiketsu",
+  label: "自決袋",
+  hint: "デフォルト"
+}, {
+  id: "kurusu_katana",
+  label: "来栖の刀",
+  hint: "やや高設定?"
+}, {
+  id: "mumei_kendama",
+  label: "無名のけん玉",
+  hint: "やや高設定?"
+}, {
+  id: "ayame_yumi",
+  label: "菖蒲の弓",
+  hint: "高設定示唆"
+}, {
+  id: "miyama",
+  label: "ミヤマカラスアゲハ",
+  hint: "高設定示唆(強)"
+}, {
+  id: "shokichi",
+  label: "小吉",
+  hint: "設定2以上"
+}, {
+  id: "chukichi",
+  label: "中吉",
+  hint: "設定4以上"
+}, {
+  id: "daikichi",
+  label: "大吉",
+  hint: "設定6"
+}];
+const CYCLE_BONUS = [{
+  id: "cycle3_normal_hit",
+  label: "3周期目 当選（短縮なし）",
+  hint: "通常時・大きな設定差あり"
+}, {
+  id: "cycle3_normal_miss",
+  label: "3周期目 非当選（短縮なし）",
+  hint: ""
+}, {
+  id: "cycle3_short_hit",
+  label: "3周期目 当選（短縮あり）",
+  hint: "リセ後/駆け抜け後/景之ST後"
+}, {
+  id: "cycle3_short_miss",
+  label: "3周期目 非当選（短縮あり）",
+  hint: ""
+}];
+const KAGENO_LOOP = [{
+  id: "kageno_loop_yes",
+  label: "景之STループ成功",
+  hint: "高設定示唆"
+}, {
+  id: "kageno_loop_no",
+  label: "景之STループ失敗",
+  hint: ""
+}];
+
+// ── localStorage helpers ──────────────────────────────────────
+const STORAGE_KEY = "kabaneri_unato_counter_v1";
+function loadData() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (raw) {
+      const saved = JSON.parse(raw);
+      // Deep merge with defaults to handle schema changes (new keys added)
+      const defaults = getDefaultState();
+      const merged = {
+        ...defaults,
+        ...saved
+      };
+      for (const key of Object.keys(defaults)) {
+        if (defaults[key] && typeof defaults[key] === "object" && !Array.isArray(defaults[key])) {
+          merged[key] = {
+            ...defaults[key],
+            ...(saved[key] || {})
+          };
+        }
+      }
+      return merged;
+    }
+  } catch {}
+  return null;
+}
+function saveData(data) {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+  } catch {}
+}
+function getDefaultState() {
+  return {
+    totalGames: 0,
+    normalGames: 0,
+    bonusCount: 0,
+    stCount: 0,
+    shimoBellCount: 0,
+    trophies: {
+      bronze: 0,
+      silver: 0,
+      gold: 0,
+      kirin: 0,
+      rainbow: 0
+    },
+    stEndScreens: {
+      geta: 0,
+      hanami: 0,
+      mizugi: 0
+    },
+    voices: {
+      male: 0,
+      female: 0,
+      kageno_weak: 0,
+      kageno_mid: 0,
+      kageno_strong: 0,
+      mumei_special: 0,
+      no_voice: 0
+    },
+    charas: {
+      male_chara: 0,
+      female_chara: 0,
+      biba: 0
+    },
+    kabaneriAtk: {
+      atk44: 0,
+      atk55: 0,
+      atk66: 0,
+      atk77: 0
+    },
+    specialDisplay: {
+      disp456: 0,
+      disp666: 0
+    },
+    omikuji: {
+      tsuranuki: 0,
+      mumei_gun: 0,
+      jiketsu: 0,
+      kurusu_katana: 0,
+      mumei_kendama: 0,
+      ayame_yumi: 0,
+      miyama: 0,
+      shokichi: 0,
+      chukichi: 0,
+      daikichi: 0
+    },
+    cycleBonus: {
+      cycle3_normal_hit: 0,
+      cycle3_normal_miss: 0,
+      cycle3_short_hit: 0,
+      cycle3_short_miss: 0
+    },
+    kagenoLoop: {
+      kageno_loop_yes: 0,
+      kageno_loop_no: 0
+    },
+    czCount: 0,
+    memo: ""
+  };
+}
+
+// ── Setting Estimation Logic (Bayesian-style) ─────────────────
+// Each evidence source produces a log-likelihood for each setting.
+// Probability evidence uses binomial likelihood with effective sample
+// cap to prevent large-sample domination. Confirmed演出 uses hard cutoff.
+
+function binomialLogLik(hits, trials, p) {
+  if (p <= 0 || p >= 1 || trials <= 0) return 0;
+  return hits * Math.log(p) + (trials - hits) * Math.log(1 - p);
+}
+
+// Cap effective sample size to prevent probability evidence from
+// drowning out all other signals. Returns dampened (hits, trials).
+function dampen(hits, trials, maxTrials = 2000) {
+  if (trials <= maxTrials) return {
+    h: hits,
+    t: trials
+  };
+  const ratio = hits / trials;
+  return {
+    h: Math.round(ratio * maxTrials),
+    t: maxTrials
+  };
+}
+function estimateSettings(state) {
+  const logLik = [0, 0, 0, 0, 0, 0]; // settings 1-6
+  let hasAnyData = false;
+
+  // ════════════════════════════════════════════════════════
+  // A. Probability-based evidence (binomial likelihood)
+  // ════════════════════════════════════════════════════════
+
+  // ── A1. 初当り確率 ──
+  if (state.normalGames >= 50 && state.bonusCount > 0) {
+    hasAnyData = true;
+    const {
+      h,
+      t
+    } = dampen(state.bonusCount, state.normalGames);
+    SETTINGS_PROBABILITIES.initialHit.forEach((s, i) => {
+      logLik[i] += binomialLogLik(h, t, 1 / s.val);
+    });
+  }
+
+  // ── A2. ST確率 ──
+  if (state.normalGames >= 50 && state.stCount > 0) {
+    hasAnyData = true;
+    const {
+      h,
+      t
+    } = dampen(state.stCount, state.normalGames);
+    SETTINGS_PROBABILITIES.st.forEach((s, i) => {
+      logLik[i] += binomialLogLik(h, t, 1 / s.val);
+    });
+  }
+
+  // ── A3. 下段ベル確率 (totalGames基準 = 通常時+AT中) ──
+  if (state.totalGames >= 50 && state.shimoBellCount > 0) {
+    hasAnyData = true;
+    const {
+      h,
+      t
+    } = dampen(state.shimoBellCount, state.totalGames);
+    SETTINGS_PROBABILITIES.shimoBell.forEach((s, i) => {
+      logLik[i] += binomialLogLik(h, t, 1 / s.val);
+    });
+  }
+
+  // ── A4. CZ確率 (normalGames基準 = 通常時のみ) ──
+  // 実戦値: 設1 1/251.5, 設6 1/225.5
+  const czRefVals = [251.5, 246.3, 241.1, 235.9, 230.7, 225.5];
+  if (state.normalGames >= 50 && state.czCount > 0) {
+    hasAnyData = true;
+    const {
+      h,
+      t
+    } = dampen(state.czCount, state.normalGames);
+    czRefVals.forEach((v, i) => {
+      logLik[i] += binomialLogLik(h, t, 1 / v);
+    });
+  }
+
+  // ════════════════════════════════════════════════════════
+  // B. 確定演出 (hard cutoff → 該当しない設定を除外)
+  // ════════════════════════════════════════════════════════
+  const {
+    trophies
+  } = state;
+  let hardMin = 0; // 0-indexed: settings below this are impossible
+
+  if (trophies.bronze > 0) hardMin = Math.max(hardMin, 1); // 設定2以上
+  if (trophies.silver > 0) hardMin = Math.max(hardMin, 2); // 設定3以上
+  if (trophies.gold > 0) hardMin = Math.max(hardMin, 3); // 設定4以上
+  if (trophies.kirin > 0) hardMin = Math.max(hardMin, 4); // 設定5以上
+  if (trophies.rainbow > 0) hardMin = Math.max(hardMin, 5); // 設定6
+
+  if (state.kabaneriAtk.atk44 > 0) hardMin = Math.max(hardMin, 3);
+  if (state.kabaneriAtk.atk55 > 0) hardMin = Math.max(hardMin, 4);
+  if (state.kabaneriAtk.atk66 > 0 || state.kabaneriAtk.atk77 > 0) hardMin = Math.max(hardMin, 5);
+  if (state.specialDisplay.disp456 > 0) hardMin = Math.max(hardMin, 3);
+  if (state.specialDisplay.disp666 > 0) hardMin = Math.max(hardMin, 5);
+  if (state.omikuji.shokichi > 0) hardMin = Math.max(hardMin, 1);
+  if (state.omikuji.chukichi > 0) hardMin = Math.max(hardMin, 3);
+  if (state.omikuji.daikichi > 0) hardMin = Math.max(hardMin, 5);
+  if (state.voices.mumei_special > 0) hardMin = Math.max(hardMin, 1);
+  if (state.voices.no_voice > 0) hardMin = Math.max(hardMin, 4);
+  if (state.stEndScreens.mizugi > 0) hardMin = Math.max(hardMin, 5);
+  if (state.charas.biba > 0) hardMin = Math.max(hardMin, 3);
+  if (hardMin > 0) {
+    hasAnyData = true;
+    for (let i = 0; i < hardMin; i++) logLik[i] = -Infinity;
+  }
+
+  // ════════════════════════════════════════════════════════
+  // C. 演出比率系 (soft evidence)
+  // ════════════════════════════════════════════════════════
+
+  // ── C1. ボイス奇偶 (male vs female のみで二項計算) ──
+  // 実戦値: 設1 male37.1%/female51.7%, 設6 male33.7%/female46.2%
+  // (残りは景之系+特殊。male+femaleの中での比率に変換)
+  // 設1: male/(male+female) = 37.1/(37.1+51.7) = 41.8%
+  // 設6: male/(male+female) = 33.7/(33.7+46.2) = 42.2%
+  // → 差が小さい。奇偶の理論値を使用:
+  //   奇数(1,3,5): male寄り ~48-52%, 偶数(2,4,6): female寄り ~38-42%
+  const mfVoiceTotal = state.voices.male + state.voices.female;
+  if (mfVoiceTotal >= 5) {
+    hasAnyData = true;
+    // male/(male+female) の設定別理論比率
+    const voiceMaleRatios = [0.50, 0.42, 0.50, 0.42, 0.50, 0.42];
+    const {
+      h,
+      t
+    } = dampen(state.voices.male, mfVoiceTotal, 200);
+    voiceMaleRatios.forEach((mr, i) => {
+      logLik[i] += binomialLogLik(h, t, mr);
+    });
+  }
+
+  // ── C2. 景之ボイス出現率 (totalVoice中の比率で二項計算) ──
+  const totalVoice = Object.values(state.voices).reduce((a, b) => a + b, 0);
+  if (totalVoice >= 5) {
+    // 景之(弱): 設1 10.3%, 設6 17.2%
+    const kagenoWeakRates = [0.103, 0.110, 0.120, 0.135, 0.150, 0.172];
+    const kwCount = state.voices.kageno_weak;
+    if (kwCount > 0 || totalVoice >= 20) {
+      const {
+        h,
+        t
+      } = dampen(kwCount, totalVoice, 300);
+      kagenoWeakRates.forEach((r, i) => {
+        logLik[i] += binomialLogLik(h, t, r);
+      });
+    }
+
+    // 景之(中): 設1 0.9%, 設6 1.8%
+    const kmCount = state.voices.kageno_mid;
+    if (kmCount > 0) {
+      hasAnyData = true;
+      const kagenoMidRates = [0.009, 0.010, 0.011, 0.013, 0.015, 0.018];
+      const {
+        h,
+        t
+      } = dampen(kmCount, totalVoice, 300);
+      kagenoMidRates.forEach((r, i) => {
+        logLik[i] += binomialLogLik(h, t, r);
+      });
+    }
+
+    // 景之(強): 設1 出現せず(≒0.1%), 設6 0.6%
+    const ksCount = state.voices.kageno_strong;
+    if (ksCount > 0) {
+      hasAnyData = true;
+      const kagenoStrongRates = [0.001, 0.001, 0.002, 0.003, 0.004, 0.006];
+      const {
+        h,
+        t
+      } = dampen(ksCount, totalVoice, 300);
+      kagenoStrongRates.forEach((r, i) => {
+        logLik[i] += binomialLogLik(h, t, r);
+      });
+    }
+  }
+
+  // ── C3. キャラ紹介 奇偶 (male vs female で二項計算) ──
+  // 公式: 設定1=男女1:1, 偶数=女性多め, 奇数(3,5)=男性多め
+  // female/(male+female) の設定別理論比率
+  const mfCharaTotal = state.charas.male_chara + state.charas.female_chara;
+  if (mfCharaTotal >= 5) {
+    hasAnyData = true;
+    const charaFemaleRatios = [0.50, 0.58, 0.45, 0.58, 0.45, 0.61];
+    const {
+      h,
+      t
+    } = dampen(state.charas.female_chara, mfCharaTotal, 200);
+    charaFemaleRatios.forEach((fr, i) => {
+      logLik[i] += binomialLogLik(h, t, fr);
+    });
+  }
+
+  // ── C4. ST終了画面 (花見出現率で二項計算) ──
+  // 実戦値: 設1 花見3.5%, 設6 花見4.8%
+  const totalScreens = Object.values(state.stEndScreens).reduce((a, b) => a + b, 0);
+  if (totalScreens >= 3) {
+    hasAnyData = true;
+    const hanamiRates = [0.035, 0.037, 0.039, 0.042, 0.045, 0.048];
+    const {
+      h,
+      t
+    } = dampen(state.stEndScreens.hanami, totalScreens, 200);
+    hanamiRates.forEach((r, i) => {
+      logLik[i] += binomialLogLik(h, t, r);
+    });
+  }
+
+  // ── C5. アイテムくじ 菖蒲の弓出現率 (二項計算) ──
+  // 実戦値: 設1 3.6%, 設6 13.4% → 大差あり
+  const totalOmikuji = Object.values(state.omikuji).reduce((a, b) => a + b, 0);
+  if (totalOmikuji >= 3) {
+    hasAnyData = true;
+    const ayameRates = [0.036, 0.045, 0.055, 0.075, 0.100, 0.134];
+    const {
+      h,
+      t
+    } = dampen(state.omikuji.ayame_yumi, totalOmikuji, 200);
+    ayameRates.forEach((r, i) => {
+      logLik[i] += binomialLogLik(h, t, r);
+    });
+  }
+
+  // ミヤマカラスアゲハ出現率: 設1 出現せず(≒0.5%), 設6 1.8%
+  if (totalOmikuji >= 3 && state.omikuji.miyama > 0) {
+    hasAnyData = true;
+    const miyamaRates = [0.005, 0.006, 0.008, 0.010, 0.014, 0.018];
+    const {
+      h,
+      t
+    } = dampen(state.omikuji.miyama, totalOmikuji, 200);
+    miyamaRates.forEach((r, i) => {
+      logLik[i] += binomialLogLik(h, t, r);
+    });
+  }
+
+  // ── C6. 3周期目ボーナス当選率 (短縮なし / 短縮あり を分離) ──
+  // 実戦値(短縮なし): 設1 0%(0/5), 設6 33.3%(1/3) → 大きな設定差
+  // 実戦値(短縮あり): 設1 50.0%(4/8), 設6 66.7%(2/3) → 短縮時は全体的に高め
+  // 解析情報「低設定はかなり抑えられている」
+
+  // 短縮なし: 低設定でほぼ当選しない → 設定差大
+  const cycle3NormalTotal = state.cycleBonus.cycle3_normal_hit + state.cycleBonus.cycle3_normal_miss;
+  if (cycle3NormalTotal >= 1) {
+    hasAnyData = true;
+    const cycle3NormalRates = [0.05, 0.10, 0.15, 0.25, 0.35, 0.45];
+    cycle3NormalRates.forEach((r, i) => {
+      logLik[i] += binomialLogLik(state.cycleBonus.cycle3_normal_hit, cycle3NormalTotal, r);
+    });
+  }
+
+  // 短縮あり: ベースが高いが高設定ほどさらに高い
+  const cycle3ShortTotal = state.cycleBonus.cycle3_short_hit + state.cycleBonus.cycle3_short_miss;
+  if (cycle3ShortTotal >= 1) {
+    hasAnyData = true;
+    const cycle3ShortRates = [0.40, 0.45, 0.50, 0.55, 0.65, 0.75];
+    cycle3ShortRates.forEach((r, i) => {
+      logLik[i] += binomialLogLik(state.cycleBonus.cycle3_short_hit, cycle3ShortTotal, r);
+    });
+  }
+
+  // ── C7. 景之STループ率 (二項計算) ──
+  // 公式: 高設定ほど優遇。具体的数値は未公表。
+  // ちょんぼりすた実戦考察より: 設5勝率80%超、設6勝率85%超を参考に推定
+  const kagenoLoopTotal = state.kagenoLoop.kageno_loop_yes + state.kagenoLoop.kageno_loop_no;
+  if (kagenoLoopTotal >= 1) {
+    hasAnyData = true;
+    const loopRates = [0.15, 0.20, 0.25, 0.35, 0.45, 0.55];
+    loopRates.forEach((r, i) => {
+      logLik[i] += binomialLogLik(state.kagenoLoop.kageno_loop_yes, kagenoLoopTotal, r);
+    });
+  }
+
+  // ════════════════════════════════════════════════════════
+  // D. Convert to probability distribution
+  // ════════════════════════════════════════════════════════
+  if (!hasAnyData) {
+    return [1, 2, 3, 4, 5, 6].map(s => ({
+      setting: s,
+      score: 0,
+      pct: 16.7
+    }));
+  }
+  const validLogLiks = logLik.filter(x => x > -Infinity);
+  if (validLogLiks.length === 0) {
+    return [1, 2, 3, 4, 5, 6].map(s => ({
+      setting: s,
+      score: 0,
+      pct: 16.7
+    }));
+  }
+  const maxLL = Math.max(...validLogLiks);
+  const likelihoods = logLik.map(ll => ll === -Infinity ? 0 : Math.exp(ll - maxLL));
+  const totalLik = likelihoods.reduce((a, b) => a + b, 0);
+  if (totalLik === 0) {
+    return [1, 2, 3, 4, 5, 6].map(s => ({
+      setting: s,
+      score: 0,
+      pct: 16.7
+    }));
+  }
+  return likelihoods.map((lik, i) => ({
+    setting: i + 1,
+    score: lik,
+    pct: parseFloat((lik / totalLik * 100).toFixed(1))
+  }));
+}
+
+// ── Sub Components (Pachislot counter app UX patterns) ─────────
+// Design principles from top apps (設定推測カウンター, 小役カウンターcount, MAXBET):
+// - Large tap targets (min 48px) for one-handed use at the machine
+// - + is the PRIMARY action: big, prominent, easy to hit
+// - − is secondary: smaller, less prominent
+// - Count number displayed large and centered
+// - Visual feedback flash on tap
+// - Current probability shown inline where applicable
+
+function CounterRow({
+  label,
+  hint,
+  value,
+  onChange,
+  accentColor
+}) {
+  const [flash, setFlash] = useState(false);
+  const doIncrement = () => {
+    onChange(value + 1);
+    setFlash(true);
+    setTimeout(() => setFlash(false), 150);
+  };
+  return /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      alignItems: "stretch",
+      marginBottom: 6,
+      borderRadius: 10,
+      overflow: "hidden",
+      background: flash ? "rgba(26,107,255,0.15)" : "rgba(255,255,255,0.03)",
+      transition: "background 0.15s",
+      border: `1px solid ${flash ? "rgba(26,107,255,0.3)" : "rgba(255,255,255,0.06)"}`
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      width: 4,
+      background: accentColor || "#444",
+      flexShrink: 0
+    }
+  }), /*#__PURE__*/React.createElement("div", {
+    onClick: doIncrement,
+    style: {
+      flex: 1,
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "space-between",
+      padding: "10px 12px",
+      cursor: "pointer",
+      minHeight: 52,
+      WebkitTapHighlightColor: "rgba(26,107,255,0.2)"
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      flex: 1,
+      minWidth: 0,
+      paddingRight: 8
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 13,
+      fontWeight: 600,
+      color: "#e0e0e0",
+      lineHeight: 1.3
+    }
+  }, label), hint && /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 10,
+      color: "#f7b731",
+      lineHeight: 1.3,
+      marginTop: 2
+    }
+  }, hint)), /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontSize: 24,
+      fontWeight: 800,
+      color: "#fff",
+      fontFamily: "'JetBrains Mono', monospace",
+      minWidth: 40,
+      textAlign: "center",
+      lineHeight: 1
+    }
+  }, value)), /*#__PURE__*/React.createElement("button", {
+    onClick: e => {
+      e.stopPropagation();
+      onChange(Math.max(0, value - 1));
+    },
+    style: {
+      width: 44,
+      border: "none",
+      borderLeft: "1px solid rgba(255,255,255,0.06)",
+      background: "rgba(255,255,255,0.04)",
+      color: "#888",
+      fontSize: 20,
+      fontWeight: 700,
+      cursor: "pointer",
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      flexShrink: 0
+    }
+  }, "\u2212"));
+}
+function NumberInput({
+  label,
+  value,
+  onChange,
+  sub
+}) {
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState("");
+  const handleFocus = e => {
+    setEditing(true);
+    setDraft(value === 0 ? "" : String(value));
+    setTimeout(() => e.target.select(), 0);
+  };
+  const handleBlur = () => {
+    setEditing(false);
+    const parsed = parseInt(draft, 10);
+    onChange(isNaN(parsed) || parsed < 0 ? 0 : parsed);
+  };
+  const handleKeyDown = e => {
+    if (e.key === "Enter") e.target.blur();
+  };
+  return /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "space-between",
+      padding: "10px 12px",
+      marginBottom: 6,
+      borderRadius: 10,
+      background: "rgba(255,255,255,0.03)",
+      border: "1px solid rgba(255,255,255,0.06)"
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      flex: 1,
+      minWidth: 0,
+      paddingRight: 8
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 13,
+      fontWeight: 600,
+      color: "#ccc"
+    }
+  }, label), sub && /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 10,
+      color: "#888",
+      marginTop: 2
+    }
+  }, sub)), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      alignItems: "center",
+      gap: 4,
+      flexShrink: 0
+    }
+  }, /*#__PURE__*/React.createElement("button", {
+    onClick: () => onChange(Math.max(0, value - 10)),
+    style: numBtn("#1a1a2e")
+  }, /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontSize: 10
+    }
+  }, "-10")), /*#__PURE__*/React.createElement("button", {
+    onClick: () => onChange(Math.max(0, value - 1)),
+    style: numBtn("#222")
+  }, "\u2212"), /*#__PURE__*/React.createElement("input", {
+    type: "number",
+    inputMode: "numeric",
+    value: editing ? draft : value,
+    onChange: e => editing ? setDraft(e.target.value) : onChange(Math.max(0, parseInt(e.target.value) || 0)),
+    onFocus: handleFocus,
+    onBlur: handleBlur,
+    onKeyDown: handleKeyDown,
+    style: {
+      width: 72,
+      textAlign: "center",
+      background: "#0a0a12",
+      border: "1px solid #333",
+      borderRadius: 8,
+      color: "#fff",
+      fontSize: 18,
+      fontWeight: 800,
+      padding: "8px 4px",
+      fontFamily: "'JetBrains Mono', monospace"
+    }
+  }), /*#__PURE__*/React.createElement("button", {
+    onClick: () => onChange(value + 1),
+    style: numBtn("#1a6bff")
+  }, "\uFF0B"), /*#__PURE__*/React.createElement("button", {
+    onClick: () => onChange(value + 10),
+    style: numBtn("#1a6bff")
+  }, /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontSize: 10
+    }
+  }, "+10"))));
+}
+const numBtn = bg => ({
+  width: 40,
+  height: 40,
+  borderRadius: 8,
+  border: "none",
+  background: bg,
+  color: "#fff",
+  fontSize: 16,
+  fontWeight: 700,
+  cursor: "pointer",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  flexShrink: 0,
+  lineHeight: 1
+});
+function Section({
+  title,
+  icon,
+  children,
+  defaultOpen = true
+}) {
+  const [open, setOpen] = useState(defaultOpen);
+  return /*#__PURE__*/React.createElement("div", {
+    style: {
+      marginBottom: 12
+    }
+  }, /*#__PURE__*/React.createElement("button", {
+    onClick: () => setOpen(!open),
+    style: {
+      width: "100%",
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "space-between",
+      padding: "12px 14px",
+      background: "linear-gradient(135deg, #1a1a2e 0%, #16213e 100%)",
+      border: "1px solid rgba(255,255,255,0.08)",
+      borderRadius: 10,
+      cursor: "pointer",
+      color: "#fff",
+      fontSize: 14,
+      fontWeight: 700,
+      minHeight: 48
+    }
+  }, /*#__PURE__*/React.createElement("span", null, icon, " ", title), /*#__PURE__*/React.createElement("span", {
+    style: {
+      transform: open ? "rotate(180deg)" : "rotate(0deg)",
+      transition: "0.2s",
+      fontSize: 12,
+      color: "#888"
+    }
+  }, "\u25BC")), open && /*#__PURE__*/React.createElement("div", {
+    style: {
+      padding: "8px 4px 4px 4px",
+      background: "rgba(0,0,0,0.2)",
+      borderRadius: "0 0 10px 10px",
+      marginTop: -2
+    }
+  }, children));
+}
+
+// (btnStyle removed - replaced by numBtn and inline styles)
+
+// ── Memo Text Generator ──────────────────────────────────────
+function generateMemoText(state, estimation, confirmedMin) {
+  const bestSetting = estimation.reduce((a, b) => a.pct > b.pct ? a : b);
+  const now = new Date();
+  const dateStr = `${now.getFullYear()}/${String(now.getMonth() + 1).padStart(2, '0')}/${String(now.getDate()).padStart(2, '0')} ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+  const fmtProb = (count, denom) => denom > 0 && count > 0 ? `1/${(denom / count).toFixed(1)}` : "---";
+  const fmtCount = items => Object.entries(items).filter(([, v]) => v > 0).map(([k, v]) => `${v}`).length > 0;
+  let lines = [];
+  lines.push(`━━━━━━━━━━━━━━━━━━`);
+  lines.push(`🎰 カバネリ海門決戦 設定推測結果`);
+  lines.push(`📅 ${dateStr}`);
+  lines.push(`━━━━━━━━━━━━━━━━━━`);
+  lines.push(``);
+
+  // Estimation result
+  lines.push(`▶ 推測設定: ${bestSetting.pct > 16.7 ? `設定${bestSetting.setting}` : "判定不能"}`);
+  if (confirmedMin > 1) lines.push(`🔥 確定演出: 設定${confirmedMin}以上`);
+  lines.push(``);
+  lines.push(`設定別確率:`);
+  estimation.forEach(e => {
+    const bar = "█".repeat(Math.round(e.pct / 5)) + "░".repeat(Math.max(0, 20 - Math.round(e.pct / 5)));
+    lines.push(`  設${e.setting} ${bar} ${e.pct}%`);
+  });
+  lines.push(``);
+
+  // Basic counts
+  lines.push(`── 基本データ ──`);
+  lines.push(`総G数: ${state.totalGames}`);
+  lines.push(`通常時G数: ${state.normalGames}`);
+  lines.push(`ボーナス: ${state.bonusCount}回 (${fmtProb(state.bonusCount, state.normalGames)})`);
+  lines.push(`ST突入: ${state.stCount}回 (${fmtProb(state.stCount, state.normalGames)})`);
+  lines.push(`下段ベル: ${state.shimoBellCount}回 (${fmtProb(state.shimoBellCount, state.totalGames)})`);
+  lines.push(`CZ: ${state.czCount}回 (${fmtProb(state.czCount, state.normalGames)})`);
+  lines.push(``);
+
+  // Trophies
+  const trophyLabels = {
+    bronze: "銅",
+    silver: "銀",
+    gold: "金",
+    kirin: "キリン柄",
+    rainbow: "虹"
+  };
+  const trophyEntries = Object.entries(state.trophies).filter(([, v]) => v > 0);
+  if (trophyEntries.length > 0) {
+    lines.push(`── トロフィー ──`);
+    trophyEntries.forEach(([k, v]) => lines.push(`  ${trophyLabels[k]}: ${v}回`));
+    lines.push(``);
+  }
+
+  // ST end screens
+  const screenLabels = {
+    geta: "下駄",
+    hanami: "花見",
+    mizugi: "水着"
+  };
+  const screenEntries = Object.entries(state.stEndScreens).filter(([, v]) => v > 0);
+  if (screenEntries.length > 0) {
+    lines.push(`── ST終了画面 ──`);
+    screenEntries.forEach(([k, v]) => lines.push(`  ${screenLabels[k]}: ${v}回`));
+    lines.push(``);
+  }
+
+  // Voices
+  const voiceLabels = {
+    male: "男性",
+    female: "女性",
+    kageno_weak: "景之(弱)",
+    kageno_mid: "景之(中)",
+    kageno_strong: "景之(強)",
+    mumei_special: "無名特殊",
+    no_voice: "ボイスなし"
+  };
+  const voiceEntries = Object.entries(state.voices).filter(([, v]) => v > 0);
+  if (voiceEntries.length > 0) {
+    const totalV = Object.values(state.voices).reduce((a, b) => a + b, 0);
+    lines.push(`── ボーナス中ボイス (計${totalV}回) ──`);
+    voiceEntries.forEach(([k, v]) => {
+      const pct = (v / totalV * 100).toFixed(1);
+      lines.push(`  ${voiceLabels[k]}: ${v}回 (${pct}%)`);
+    });
+    lines.push(``);
+  }
+
+  // Chara
+  const charaLabels = {
+    male_chara: "男性",
+    female_chara: "女性",
+    biba: "美馬"
+  };
+  const charaEntries = Object.entries(state.charas).filter(([, v]) => v > 0);
+  if (charaEntries.length > 0) {
+    const totalC = Object.values(state.charas).reduce((a, b) => a + b, 0);
+    lines.push(`── キャラ紹介 (計${totalC}回) ──`);
+    charaEntries.forEach(([k, v]) => {
+      const pct = (v / totalC * 100).toFixed(1);
+      lines.push(`  ${charaLabels[k]}: ${v}回 (${pct}%)`);
+    });
+    lines.push(``);
+  }
+
+  // Kabaneri Attack
+  const atkLabels = {
+    atk44: "+44",
+    atk55: "+55",
+    atk66: "+66",
+    atk77: "+77"
+  };
+  const atkEntries = Object.entries(state.kabaneriAtk).filter(([, v]) => v > 0);
+  if (atkEntries.length > 0) {
+    lines.push(`── カバネリアタック ──`);
+    atkEntries.forEach(([k, v]) => lines.push(`  ${atkLabels[k]}: ${v}回`));
+    lines.push(``);
+  }
+
+  // Special display
+  const dispLabels = {
+    disp456: "456OVER",
+    disp666: "666OVER"
+  };
+  const dispEntries = Object.entries(state.specialDisplay).filter(([, v]) => v > 0);
+  if (dispEntries.length > 0) {
+    lines.push(`── 獲得枚数表示 ──`);
+    dispEntries.forEach(([k, v]) => lines.push(`  ${dispLabels[k]}: ${v}回`));
+    lines.push(``);
+  }
+
+  // Omikuji
+  const omikujiLabels = {
+    tsuranuki: "ツラヌキ筒",
+    mumei_gun: "無名の短銃",
+    jiketsu: "自決袋",
+    kurusu_katana: "来栖の刀",
+    mumei_kendama: "無名のけん玉",
+    ayame_yumi: "菖蒲の弓",
+    miyama: "ミヤマカラスアゲハ",
+    shokichi: "小吉",
+    chukichi: "中吉",
+    daikichi: "大吉"
+  };
+  const omikujiEntries = Object.entries(state.omikuji).filter(([, v]) => v > 0);
+  if (omikujiEntries.length > 0) {
+    const totalO = Object.values(state.omikuji).reduce((a, b) => a + b, 0);
+    lines.push(`── アイテムくじ (計${totalO}回) ──`);
+    omikujiEntries.forEach(([k, v]) => {
+      const pct = (v / totalO * 100).toFixed(1);
+      lines.push(`  ${omikujiLabels[k]}: ${v}回 (${pct}%)`);
+    });
+    lines.push(``);
+  }
+
+  // Cycle bonus
+  const c3nHit = state.cycleBonus.cycle3_normal_hit;
+  const c3nMiss = state.cycleBonus.cycle3_normal_miss;
+  const c3sHit = state.cycleBonus.cycle3_short_hit;
+  const c3sMiss = state.cycleBonus.cycle3_short_miss;
+  if (c3nHit + c3nMiss + c3sHit + c3sMiss > 0) {
+    lines.push(`── 3周期目ボーナス ──`);
+    if (c3nHit + c3nMiss > 0) lines.push(`  短縮なし: ${c3nHit}/${c3nHit + c3nMiss} (${(c3nHit / (c3nHit + c3nMiss) * 100).toFixed(1)}%)`);
+    if (c3sHit + c3sMiss > 0) lines.push(`  短縮あり: ${c3sHit}/${c3sHit + c3sMiss} (${(c3sHit / (c3sHit + c3sMiss) * 100).toFixed(1)}%)`);
+    lines.push(``);
+  }
+
+  // Kageno loop
+  const klYes = state.kagenoLoop.kageno_loop_yes;
+  const klNo = state.kagenoLoop.kageno_loop_no;
+  if (klYes + klNo > 0) {
+    lines.push(`── 景之STループ ──`);
+    lines.push(`  成功: ${klYes}/${klYes + klNo} (${(klYes / (klYes + klNo) * 100).toFixed(1)}%)`);
+    lines.push(``);
+  }
+
+  // Memo
+  if (state.memo && state.memo.trim()) {
+    lines.push(`── メモ ──`);
+    lines.push(state.memo.trim());
+    lines.push(``);
+  }
+  lines.push(`━━━━━━━━━━━━━━━━━━`);
+  return lines.join("\n");
+}
+
+// ── Main App ──────────────────────────────────────────────────
+function KabaneriCounter() {
+  const [state, setState] = useState(() => loadData() || getDefaultState());
+  const [activeTab, setActiveTab] = useState("counter");
+  const [showReset, setShowReset] = useState(false);
+  const [copied, setCopied] = useState(false);
+  useEffect(() => {
+    saveData(state);
+  }, [state]);
+  const update = useCallback((key, val) => {
+    setState(prev => ({
+      ...prev,
+      [key]: val
+    }));
+  }, []);
+  const updateNested = useCallback((group, key, val) => {
+    setState(prev => ({
+      ...prev,
+      [group]: {
+        ...prev[group],
+        [key]: val
+      }
+    }));
+  }, []);
+  const handleReset = () => {
+    setState(getDefaultState());
+    setShowReset(false);
+  };
+  const estimation = estimateSettings(state);
+  const bestSetting = estimation.reduce((a, b) => a.pct > b.pct ? a : b);
+  const hasData = estimation.some(e => e.pct !== 16.7);
+
+  // Current probabilities
+  const currentInitHit = state.normalGames > 0 && state.bonusCount > 0 ? (state.normalGames / state.bonusCount).toFixed(1) : "---";
+  const currentST = state.normalGames > 0 && state.stCount > 0 ? (state.normalGames / state.stCount).toFixed(1) : "---";
+  const currentBell = state.totalGames > 0 && state.shimoBellCount > 0 ? (state.totalGames / state.shimoBellCount).toFixed(1) : "---";
+
+  // Confirmed minimum setting
+  let confirmedMin = 1;
+  if (state.trophies.rainbow > 0 || state.kabaneriAtk.atk66 > 0 || state.kabaneriAtk.atk77 > 0 || state.specialDisplay.disp666 > 0 || state.omikuji.daikichi > 0 || state.stEndScreens.mizugi > 0) confirmedMin = 6;else if (state.trophies.kirin > 0 || state.kabaneriAtk.atk55 > 0 || state.voices.no_voice > 0) confirmedMin = 5;else if (state.trophies.gold > 0 || state.kabaneriAtk.atk44 > 0 || state.specialDisplay.disp456 > 0 || state.omikuji.chukichi > 0 || state.charas.biba > 0) confirmedMin = 4;else if (state.trophies.silver > 0) confirmedMin = 3;else if (state.trophies.bronze > 0 || state.omikuji.shokichi > 0 || state.voices.mumei_special > 0) confirmedMin = 2;
+  const settingColors = ["#666", "#4a9eff", "#2ecc71", "#f1c40f", "#e67e22", "#e74c3c"];
+  return /*#__PURE__*/React.createElement("div", {
+    style: {
+      minHeight: "100vh",
+      background: "#0a0a12",
+      color: "#e0e0e0",
+      fontFamily: "'Noto Sans JP', 'Hiragino Kaku Gothic Pro', sans-serif",
+      maxWidth: 480,
+      margin: "0 auto",
+      paddingBottom: 80
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      background: "linear-gradient(135deg, #0f0c29 0%, #302b63 50%, #24243e 100%)",
+      padding: "16px 16px 12px",
+      position: "sticky",
+      top: 0,
+      zIndex: 100,
+      borderBottom: "2px solid rgba(231,76,60,0.6)"
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "space-between"
+    }
+  }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 11,
+      color: "#e74c3c",
+      fontWeight: 700,
+      letterSpacing: 2
+    }
+  }, "SMARTSLOT"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 17,
+      fontWeight: 900,
+      color: "#fff",
+      lineHeight: 1.2
+    }
+  }, "\u7532\u9244\u57CE\u306E\u30AB\u30D0\u30CD\u30EA \u6D77\u9580\u6C7A\u6226"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 10,
+      color: "#888",
+      marginTop: 2
+    }
+  }, "\u8A2D\u5B9A\u63A8\u6E2C\u30AB\u30A6\u30F3\u30BF\u30FC")), /*#__PURE__*/React.createElement("button", {
+    onClick: () => setShowReset(true),
+    style: {
+      padding: "6px 12px",
+      borderRadius: 6,
+      border: "1px solid #e74c3c",
+      background: "transparent",
+      color: "#e74c3c",
+      fontSize: 11,
+      cursor: "pointer",
+      fontWeight: 600
+    }
+  }, "\u30EA\u30BB\u30C3\u30C8")), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      gap: 8,
+      marginTop: 10,
+      flexWrap: "wrap"
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: quickStat
+  }, /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontSize: 10,
+      color: "#888"
+    }
+  }, "\u7DCFG\u6570"), /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontSize: 16,
+      fontWeight: 800,
+      color: "#fff",
+      fontFamily: "monospace"
+    }
+  }, state.totalGames)), /*#__PURE__*/React.createElement("div", {
+    style: quickStat
+  }, /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontSize: 10,
+      color: "#888"
+    }
+  }, "\u521D\u5F53\u308A"), /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontSize: 14,
+      fontWeight: 700,
+      color: "#4a9eff",
+      fontFamily: "monospace"
+    }
+  }, "1/", currentInitHit)), /*#__PURE__*/React.createElement("div", {
+    style: quickStat
+  }, /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontSize: 10,
+      color: "#888"
+    }
+  }, "ST\u78BA\u7387"), /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontSize: 14,
+      fontWeight: 700,
+      color: "#2ecc71",
+      fontFamily: "monospace"
+    }
+  }, "1/", currentST)), /*#__PURE__*/React.createElement("div", {
+    style: quickStat
+  }, /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontSize: 10,
+      color: "#888"
+    }
+  }, "\u4E0B\u6BB5\u30D9\u30EB"), /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontSize: 14,
+      fontWeight: 700,
+      color: "#e67e22",
+      fontFamily: "monospace"
+    }
+  }, "1/", currentBell))), confirmedMin > 1 && /*#__PURE__*/React.createElement("div", {
+    style: {
+      marginTop: 8,
+      padding: "6px 12px",
+      borderRadius: 8,
+      background: confirmedMin >= 5 ? "rgba(231,76,60,0.2)" : "rgba(241,196,15,0.15)",
+      border: `1px solid ${confirmedMin >= 5 ? "#e74c3c" : "#f1c40f"}`,
+      fontSize: 13,
+      fontWeight: 700,
+      textAlign: "center",
+      color: confirmedMin >= 5 ? "#e74c3c" : "#f1c40f"
+    }
+  }, "\uD83D\uDD25 \u8A2D\u5B9A", confirmedMin, "\u4EE5\u4E0A \u78BA\u5B9A\u6F14\u51FA\u3042\u308A")), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      position: "sticky",
+      top: 145,
+      zIndex: 99,
+      background: "#0a0a12",
+      borderBottom: "1px solid #222"
+    }
+  }, [{
+    key: "counter",
+    label: "📊 カウント"
+  }, {
+    key: "result",
+    label: "🎯 推測結果"
+  }, {
+    key: "ref",
+    label: "📋 参照表"
+  }].map(tab => /*#__PURE__*/React.createElement("button", {
+    key: tab.key,
+    onClick: () => setActiveTab(tab.key),
+    style: {
+      flex: 1,
+      padding: "10px 0",
+      border: "none",
+      cursor: "pointer",
+      background: activeTab === tab.key ? "rgba(26,107,255,0.15)" : "transparent",
+      color: activeTab === tab.key ? "#4a9eff" : "#666",
+      borderBottom: activeTab === tab.key ? "2px solid #4a9eff" : "2px solid transparent",
+      fontSize: 13,
+      fontWeight: 700,
+      transition: "0.2s"
+    }
+  }, tab.label))), /*#__PURE__*/React.createElement("div", {
+    style: {
+      padding: "12px 10px"
+    }
+  }, activeTab === "counter" && /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement(Section, {
+    title: "\u57FA\u672C\u30AB\u30A6\u30F3\u30C8",
+    icon: "\uD83C\uDFB0",
+    defaultOpen: true
+  }, /*#__PURE__*/React.createElement(NumberInput, {
+    label: "\u7DCF\u30B2\u30FC\u30E0\u6570",
+    sub: "\u901A\u5E38\u6642+AT\u4E2D\u3059\u3079\u3066",
+    value: state.totalGames,
+    onChange: v => update("totalGames", v)
+  }), /*#__PURE__*/React.createElement(NumberInput, {
+    label: "\u901A\u5E38\u6642\u30B2\u30FC\u30E0\u6570",
+    sub: "AT\u975E\u5F53\u9078\u4E2D\u306E\u307F",
+    value: state.normalGames,
+    onChange: v => update("normalGames", v)
+  }), /*#__PURE__*/React.createElement(NumberInput, {
+    label: "\u30DC\u30FC\u30CA\u30B9\u56DE\u6570",
+    sub: "\u521D\u5F53\u305F\u308A\u56DE\u6570",
+    value: state.bonusCount,
+    onChange: v => update("bonusCount", v)
+  }), /*#__PURE__*/React.createElement(NumberInput, {
+    label: "ST\u7A81\u5165\u56DE\u6570",
+    value: state.stCount,
+    onChange: v => update("stCount", v)
+  }), /*#__PURE__*/React.createElement(NumberInput, {
+    label: "\u4E0B\u6BB5\u30D9\u30EB\u56DE\u6570",
+    sub: "\u7DCFG\u6570\xF7\u4E0B\u6BB5\u30D9\u30EB\u56DE\u6570\u3067\u30AB\u30A6\u30F3\u30C8",
+    value: state.shimoBellCount,
+    onChange: v => update("shimoBellCount", v)
+  }), /*#__PURE__*/React.createElement(NumberInput, {
+    label: "CZ\u56DE\u6570(\u30C8\u30FC\u30BF\u30EB)",
+    value: state.czCount,
+    onChange: v => update("czCount", v)
+  })), /*#__PURE__*/React.createElement(Section, {
+    title: "\u30B5\u30DF\u30FC\u30C8\u30ED\u30D5\u30A3\u30FC",
+    icon: "\uD83C\uDFC6",
+    defaultOpen: false
+  }, TROPHY_ITEMS.map(t => /*#__PURE__*/React.createElement(CounterRow, {
+    key: t.id,
+    label: t.label,
+    hint: t.hint,
+    value: state.trophies[t.id],
+    accentColor: typeof t.color === "string" && !t.color.includes("gradient") ? t.color : "#FFD700",
+    onChange: v => updateNested("trophies", t.id, v)
+  }))), /*#__PURE__*/React.createElement(Section, {
+    title: "ST\u7D42\u4E86\u753B\u9762",
+    icon: "\uD83D\uDDBC\uFE0F",
+    defaultOpen: false
+  }, ST_END_SCREENS.map(s => /*#__PURE__*/React.createElement(CounterRow, {
+    key: s.id,
+    label: s.label,
+    hint: s.hint,
+    value: state.stEndScreens[s.id],
+    accentColor: s.id === "mizugi" ? "#e74c3c" : "#4a9eff",
+    onChange: v => updateNested("stEndScreens", s.id, v)
+  }))), /*#__PURE__*/React.createElement(Section, {
+    title: "\u30DC\u30FC\u30CA\u30B9\u4E2D\u30DC\u30A4\u30B9",
+    icon: "\uD83D\uDD0A",
+    defaultOpen: false
+  }, VOICE_TYPES.map(v => /*#__PURE__*/React.createElement(CounterRow, {
+    key: v.id,
+    label: v.label,
+    hint: v.hint,
+    value: state.voices[v.id],
+    accentColor: v.id.includes("kageno") || v.id === "no_voice" ? "#e74c3c" : "#4a9eff",
+    onChange: val => updateNested("voices", v.id, val)
+  }))), /*#__PURE__*/React.createElement(Section, {
+    title: "\u30DC\u30FC\u30CA\u30B9\u4E2D\u30AD\u30E3\u30E9\u7D39\u4ECB",
+    icon: "\uD83D\uDC64",
+    defaultOpen: false
+  }, CHARA_TYPES.map(c => /*#__PURE__*/React.createElement(CounterRow, {
+    key: c.id,
+    label: c.label,
+    hint: c.hint,
+    value: state.charas[c.id],
+    accentColor: c.id === "biba" ? "#e74c3c" : "#4a9eff",
+    onChange: v => updateNested("charas", c.id, v)
+  }))), /*#__PURE__*/React.createElement(Section, {
+    title: "\u30AB\u30D0\u30CD\u30EA\u30A2\u30BF\u30C3\u30AF(\u7121\u540D)\u4E0A\u4E57\u305B",
+    icon: "\u2694\uFE0F",
+    defaultOpen: false
+  }, KABANERI_ATK_ITEMS.map(a => /*#__PURE__*/React.createElement(CounterRow, {
+    key: a.id,
+    label: a.label,
+    hint: a.hint,
+    value: state.kabaneriAtk[a.id],
+    accentColor: "#e74c3c",
+    onChange: v => updateNested("kabaneriAtk", a.id, v)
+  }))), /*#__PURE__*/React.createElement(Section, {
+    title: "\u7372\u5F97\u679A\u6570\u8868\u793A",
+    icon: "\uD83D\uDCB0",
+    defaultOpen: false
+  }, SPECIAL_DISPLAY.map(d => /*#__PURE__*/React.createElement(CounterRow, {
+    key: d.id,
+    label: d.label,
+    hint: d.hint,
+    value: state.specialDisplay[d.id],
+    accentColor: "#e74c3c",
+    onChange: v => updateNested("specialDisplay", d.id, v)
+  }))), /*#__PURE__*/React.createElement(Section, {
+    title: "\u30A2\u30A4\u30C6\u30E0\u304F\u3058(\u304A\u307F\u304F\u3058)",
+    icon: "\uD83C\uDF8B",
+    defaultOpen: false
+  }, OMIKUJI_ITEMS.map(o => /*#__PURE__*/React.createElement(CounterRow, {
+    key: o.id,
+    label: o.label,
+    hint: o.hint,
+    value: state.omikuji[o.id],
+    accentColor: ["shokichi", "chukichi", "daikichi", "ayame_yumi", "miyama"].includes(o.id) ? "#f1c40f" : "#444",
+    onChange: v => updateNested("omikuji", o.id, v)
+  }))), /*#__PURE__*/React.createElement(Section, {
+    title: "3\u5468\u671F\u76EE\u30DC\u30FC\u30CA\u30B9\u5F53\u9078",
+    icon: "\uD83D\uDD04",
+    defaultOpen: false
+  }, CYCLE_BONUS.map(c => /*#__PURE__*/React.createElement(CounterRow, {
+    key: c.id,
+    label: c.label,
+    hint: c.hint,
+    value: state.cycleBonus[c.id],
+    accentColor: c.id.includes("hit") ? "#2ecc71" : "#444",
+    onChange: v => updateNested("cycleBonus", c.id, v)
+  }))), /*#__PURE__*/React.createElement(Section, {
+    title: "\u666F\u4E4BST\u30EB\u30FC\u30D7",
+    icon: "\uD83D\uDD01",
+    defaultOpen: false
+  }, KAGENO_LOOP.map(k => /*#__PURE__*/React.createElement(CounterRow, {
+    key: k.id,
+    label: k.label,
+    hint: k.hint,
+    value: state.kagenoLoop[k.id],
+    accentColor: k.id.includes("yes") ? "#2ecc71" : "#444",
+    onChange: v => updateNested("kagenoLoop", k.id, v)
+  }))), /*#__PURE__*/React.createElement(Section, {
+    title: "\u30E1\u30E2",
+    icon: "\uD83D\uDCDD",
+    defaultOpen: false
+  }, /*#__PURE__*/React.createElement("textarea", {
+    value: state.memo,
+    onChange: e => update("memo", e.target.value),
+    placeholder: "\u81EA\u7531\u306B\u30E1\u30E2\u3092\u8A18\u5165...",
+    style: {
+      width: "100%",
+      minHeight: 80,
+      background: "#111",
+      border: "1px solid #333",
+      borderRadius: 8,
+      color: "#ddd",
+      padding: 10,
+      fontSize: 13,
+      resize: "vertical",
+      boxSizing: "border-box"
+    }
+  }))), activeTab === "result" && /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+    style: {
+      textAlign: "center",
+      padding: 20,
+      background: "linear-gradient(135deg, #1a1a2e, #16213e)",
+      borderRadius: 12,
+      marginBottom: 16,
+      border: "1px solid rgba(255,255,255,0.08)"
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 12,
+      color: "#888",
+      marginBottom: 4
+    }
+  }, "\u63A8\u6E2C\u8A2D\u5B9A"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 56,
+      fontWeight: 900,
+      fontFamily: "'JetBrains Mono', monospace",
+      color: settingColors[bestSetting.setting - 1],
+      textShadow: `0 0 30px ${settingColors[bestSetting.setting - 1]}44`
+    }
+  }, hasData ? bestSetting.setting : "?"), hasData && /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 14,
+      color: "#aaa",
+      marginTop: 2
+    }
+  }, "\u78BA\u7387 ", /*#__PURE__*/React.createElement("strong", {
+    style: {
+      color: settingColors[bestSetting.setting - 1]
+    }
+  }, bestSetting.pct, "%")), !hasData && /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 12,
+      color: "#666",
+      marginTop: 4
+    }
+  }, "\u30C7\u30FC\u30BF\u3092\u5165\u529B\u3057\u3066\u304F\u3060\u3055\u3044"), confirmedMin > 1 && /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 13,
+      color: "#e74c3c",
+      fontWeight: 700,
+      marginTop: 4
+    }
+  }, "\u78BA\u5B9A\u6F14\u51FA: \u8A2D\u5B9A", confirmedMin, "\u4EE5\u4E0A")), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 13,
+      fontWeight: 700,
+      color: "#aaa",
+      marginBottom: 8
+    }
+  }, "\u8A2D\u5B9A\u5225\u78BA\u7387\u5206\u5E03"), estimation.map((e, i) => /*#__PURE__*/React.createElement("div", {
+    key: i,
+    style: {
+      display: "flex",
+      alignItems: "center",
+      gap: 8,
+      marginBottom: 6
+    }
+  }, /*#__PURE__*/React.createElement("span", {
+    style: {
+      width: 32,
+      fontSize: 14,
+      fontWeight: 800,
+      color: settingColors[i],
+      textAlign: "center"
+    }
+  }, e.setting), /*#__PURE__*/React.createElement("div", {
+    style: {
+      flex: 1,
+      height: 24,
+      background: "#111",
+      borderRadius: 6,
+      overflow: "hidden",
+      position: "relative"
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      width: `${e.pct}%`,
+      height: "100%",
+      borderRadius: 6,
+      transition: "width 0.5s",
+      background: `linear-gradient(90deg, ${settingColors[i]}88, ${settingColors[i]})`
+    }
+  }), /*#__PURE__*/React.createElement("span", {
+    style: {
+      position: "absolute",
+      right: 8,
+      top: "50%",
+      transform: "translateY(-50%)",
+      fontSize: 11,
+      fontWeight: 700,
+      color: "#fff"
+    }
+  }, e.pct, "%")))), /*#__PURE__*/React.createElement("div", {
+    style: {
+      marginTop: 20,
+      padding: 14,
+      background: "rgba(255,255,255,0.03)",
+      borderRadius: 10,
+      border: "1px solid rgba(255,255,255,0.06)"
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 13,
+      fontWeight: 700,
+      color: "#aaa",
+      marginBottom: 8
+    }
+  }, "\u73FE\u5728\u306E\u78BA\u7387\u307E\u3068\u3081"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "grid",
+      gridTemplateColumns: "1fr 1fr",
+      gap: 8
+    }
+  }, /*#__PURE__*/React.createElement(StatBox, {
+    label: "\u521D\u5F53\u308A",
+    value: `1/${currentInitHit}`,
+    ref1: "\u8A2D5: 1/203.2",
+    ref2: "\u8A2D6: 1/195.1"
+  }), /*#__PURE__*/React.createElement(StatBox, {
+    label: "ST\u78BA\u7387",
+    value: `1/${currentST}`,
+    ref1: "\u8A2D5: 1/332.6",
+    ref2: "\u8A2D6: 1/318.5"
+  }), /*#__PURE__*/React.createElement(StatBox, {
+    label: "\u4E0B\u6BB5\u30D9\u30EB",
+    value: `1/${currentBell}`,
+    ref1: "\u8A2D5: 1/104.2",
+    ref2: "\u8A2D6: 1/99.1"
+  }), /*#__PURE__*/React.createElement(StatBox, {
+    label: "CZ\u78BA\u7387",
+    value: state.totalGames > 0 && state.czCount > 0 ? `1/${(state.totalGames / state.czCount).toFixed(1)}` : "---",
+    ref1: "\u8A2D1: 1/251.5",
+    ref2: "\u8A2D6: 1/225.5"
+  }))), /*#__PURE__*/React.createElement("div", {
+    style: {
+      marginTop: 16,
+      padding: 14,
+      background: "rgba(255,255,255,0.03)",
+      borderRadius: 10,
+      border: "1px solid rgba(255,255,255,0.06)"
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 13,
+      fontWeight: 700,
+      color: "#aaa",
+      marginBottom: 8
+    }
+  }, "\u5947\u5076\u5224\u5225"), (() => {
+    const totalV = Object.values(state.voices).reduce((a, b) => a + b, 0);
+    const totalC = Object.values(state.charas).reduce((a, b) => a + b, 0);
+    const vFemale = totalV > 0 ? (state.voices.female / totalV * 100).toFixed(1) : "--";
+    const cFemale = totalC > 0 ? (state.charas.female_chara / totalC * 100).toFixed(1) : "--";
+    return /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 12,
+        color: "#ccc",
+        lineHeight: 1.8
+      }
+    }, /*#__PURE__*/React.createElement("div", null, "\u30DC\u30A4\u30B9\u5973\u6027\u7387: ", /*#__PURE__*/React.createElement("strong", {
+      style: {
+        color: "#4a9eff"
+      }
+    }, vFemale, "%"), " ", /*#__PURE__*/React.createElement("span", {
+      style: {
+        color: "#666"
+      }
+    }, "(\u5076\u6570\u8A2D\u5B9A\u76EE\u5B89: >46%)")), /*#__PURE__*/React.createElement("div", null, "\u30AD\u30E3\u30E9\u5973\u6027\u7387: ", /*#__PURE__*/React.createElement("strong", {
+      style: {
+        color: "#4a9eff"
+      }
+    }, cFemale, "%"), " ", /*#__PURE__*/React.createElement("span", {
+      style: {
+        color: "#666"
+      }
+    }, "(\u5076\u6570\u8A2D\u5B9A\u76EE\u5B89: >55%)")));
+  })()), /*#__PURE__*/React.createElement("div", {
+    style: {
+      marginTop: 16,
+      padding: 14,
+      background: "rgba(255,255,255,0.03)",
+      borderRadius: 10,
+      border: "1px solid rgba(255,255,255,0.06)"
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 13,
+      fontWeight: 700,
+      color: "#aaa",
+      marginBottom: 10
+    }
+  }, "\u30A2\u30A4\u30C6\u30E0\u304F\u3058 \u51FA\u73FE\u7387"), (() => {
+    const totalOmk = Object.values(state.omikuji).reduce((a, b) => a + b, 0);
+    // 実戦値 reference: [label, 設1%, 設6%]
+    const omikujiRef = [{
+      id: "tsuranuki",
+      label: "ツラヌキ筒",
+      s1: 38.2,
+      s6: 29.8
+    }, {
+      id: "mumei_gun",
+      label: "無名の短銃",
+      s1: 30.9,
+      s6: 19.3
+    }, {
+      id: "jiketsu",
+      label: "自決袋",
+      s1: 25.5,
+      s6: 23.8
+    }, {
+      id: "kurusu_katana",
+      label: "来栖の刀",
+      s1: 1.8,
+      s6: 6.0
+    }, {
+      id: "mumei_kendama",
+      label: "無名のけん玉",
+      s1: 0,
+      s6: 3.0
+    }, {
+      id: "ayame_yumi",
+      label: "菖蒲の弓",
+      s1: 3.6,
+      s6: 13.4,
+      highlight: true
+    }, {
+      id: "miyama",
+      label: "ミヤマカラスアゲハ",
+      s1: 0,
+      s6: 1.8,
+      highlight: true
+    }, {
+      id: "shokichi",
+      label: "小吉",
+      s1: 0,
+      s6: 3.0,
+      confirm: "設定2以上"
+    }, {
+      id: "chukichi",
+      label: "中吉",
+      s1: 0,
+      s6: 0,
+      confirm: "設定4以上"
+    }, {
+      id: "daikichi",
+      label: "大吉",
+      s1: 0,
+      s6: 0,
+      confirm: "設定6"
+    }];
+    if (totalOmk === 0) {
+      return /*#__PURE__*/React.createElement("div", {
+        style: {
+          fontSize: 12,
+          color: "#666"
+        }
+      }, "\u30C7\u30FC\u30BF\u306A\u3057\uFF08\u30A2\u30A4\u30C6\u30E0\u304F\u3058\u3092\u8A18\u9332\u3057\u3066\u304F\u3060\u3055\u3044\uFF09");
+    }
+    return /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 10,
+        color: "#666",
+        marginBottom: 8
+      }
+    }, "\u30B5\u30F3\u30D7\u30EB\u6570: ", totalOmk, "\u56DE"), /*#__PURE__*/React.createElement("div", {
+      style: {
+        display: "grid",
+        gridTemplateColumns: "1fr",
+        gap: 4
+      }
+    }, omikujiRef.map(item => {
+      const count = state.omikuji[item.id] || 0;
+      const currentRate = (count / totalOmk * 100).toFixed(1);
+      const isAboveS6 = parseFloat(currentRate) >= item.s6 && item.s6 > 0;
+      const isBelowS1 = item.s1 > 0 && parseFloat(currentRate) <= item.s1 * 0.7;
+      const rateColor = item.confirm && count > 0 ? "#e74c3c" : item.highlight && isAboveS6 ? "#2ecc71" : item.highlight && count > 0 ? "#f1c40f" : "#ccc";
+      return /*#__PURE__*/React.createElement("div", {
+        key: item.id,
+        style: {
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          padding: "5px 8px",
+          background: count > 0 && (item.highlight || item.confirm) ? "rgba(255,255,255,0.04)" : "transparent",
+          borderRadius: 6,
+          borderLeft: item.highlight || item.confirm ? `3px solid ${rateColor}` : "3px solid transparent"
+        }
+      }, /*#__PURE__*/React.createElement("div", {
+        style: {
+          flex: 1,
+          minWidth: 0
+        }
+      }, /*#__PURE__*/React.createElement("span", {
+        style: {
+          fontSize: 12,
+          color: "#ccc"
+        }
+      }, item.label), item.confirm && count > 0 && /*#__PURE__*/React.createElement("span", {
+        style: {
+          fontSize: 10,
+          color: "#e74c3c",
+          marginLeft: 6,
+          fontWeight: 700
+        }
+      }, item.confirm)), /*#__PURE__*/React.createElement("div", {
+        style: {
+          display: "flex",
+          alignItems: "baseline",
+          gap: 8,
+          flexShrink: 0
+        }
+      }, /*#__PURE__*/React.createElement("span", {
+        style: {
+          fontSize: 14,
+          fontWeight: 700,
+          color: rateColor,
+          fontFamily: "monospace",
+          minWidth: 48,
+          textAlign: "right"
+        }
+      }, currentRate, "%"), /*#__PURE__*/React.createElement("span", {
+        style: {
+          fontSize: 10,
+          color: "#555",
+          minWidth: 36,
+          textAlign: "right"
+        }
+      }, "(", count, "\u56DE)")));
+    })), /*#__PURE__*/React.createElement("div", {
+      style: {
+        marginTop: 8,
+        fontSize: 10,
+        color: "#555",
+        lineHeight: 1.6
+      }
+    }, "\u53C2\u8003\u5024 \u2014 \u83D6\u84B2\u306E\u5F13: \u8A2D1 3.6%/\u8A2D6 13.4% | \u30DF\u30E4\u30DE: \u8A2D1 0%/\u8A2D6 1.8%"));
+  })()), /*#__PURE__*/React.createElement("button", {
+    onClick: () => {
+      const text = generateMemoText(state, estimation, confirmedMin);
+      navigator.clipboard.writeText(text).then(() => {
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+      }).catch(() => {
+        // Fallback for older browsers
+        const ta = document.createElement("textarea");
+        ta.value = text;
+        ta.style.position = "fixed";
+        ta.style.opacity = "0";
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand("copy");
+        document.body.removeChild(ta);
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+      });
+    },
+    style: {
+      width: "100%",
+      marginTop: 20,
+      padding: "14px 0",
+      borderRadius: 10,
+      border: copied ? "1px solid #2ecc71" : "1px solid rgba(26,107,255,0.4)",
+      background: copied ? "rgba(46,204,113,0.15)" : "rgba(26,107,255,0.1)",
+      color: copied ? "#2ecc71" : "#4a9eff",
+      fontSize: 15,
+      fontWeight: 700,
+      cursor: "pointer",
+      transition: "all 0.2s"
+    }
+  }, copied ? "✅ コピーしました！" : "📋 全データをクリップボードにコピー")), activeTab === "ref" && /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 12,
+      color: "#ccc"
+    }
+  }, /*#__PURE__*/React.createElement(RefTable, {
+    title: "\u521D\u5F53\u308A\u78BA\u7387",
+    headers: ["設定", "初当り", "ST"],
+    rows: SETTINGS_PROBABILITIES.initialHit.map((s, i) => [s.setting, s.prob, SETTINGS_PROBABILITIES.st[i].prob])
+  }), /*#__PURE__*/React.createElement(RefTable, {
+    title: "\u4E0B\u6BB5\u30D9\u30EB\u78BA\u7387",
+    headers: ["設定", "確率"],
+    rows: SETTINGS_PROBABILITIES.shimoBell.map(s => [s.setting, s.prob])
+  }), /*#__PURE__*/React.createElement(RefSection, {
+    title: "\u30B5\u30DF\u30FC\u30C8\u30ED\u30D5\u30A3\u30FC"
+  }, TROPHY_ITEMS.map(t => /*#__PURE__*/React.createElement("div", {
+    key: t.id,
+    style: refLine
+  }, /*#__PURE__*/React.createElement("span", null, t.label), /*#__PURE__*/React.createElement("span", {
+    style: {
+      color: "#f7b731"
+    }
+  }, t.hint)))), /*#__PURE__*/React.createElement(RefSection, {
+    title: "ST\u7D42\u4E86\u753B\u9762"
+  }, ST_END_SCREENS.map(s => /*#__PURE__*/React.createElement("div", {
+    key: s.id,
+    style: refLine
+  }, /*#__PURE__*/React.createElement("span", null, s.label), /*#__PURE__*/React.createElement("span", {
+    style: {
+      color: "#f7b731"
+    }
+  }, s.hint))), /*#__PURE__*/React.createElement("div", {
+    style: {
+      marginTop: 6,
+      fontSize: 11,
+      color: "#888"
+    }
+  }, "\u203B\u6C34\u7740\u753B\u9762\u306F5001G\u4EE5\u964D\u3067\u51FA\u73FE\u7387\u30A2\u30C3\u30D7")), /*#__PURE__*/React.createElement(RefSection, {
+    title: "\u30DC\u30FC\u30CA\u30B9\u4E2D\u30DC\u30A4\u30B9"
+  }, VOICE_TYPES.map(v => /*#__PURE__*/React.createElement("div", {
+    key: v.id,
+    style: refLine
+  }, /*#__PURE__*/React.createElement("span", null, v.label), /*#__PURE__*/React.createElement("span", {
+    style: {
+      color: "#f7b731"
+    }
+  }, v.hint)))), /*#__PURE__*/React.createElement(RefSection, {
+    title: "\u30DC\u30FC\u30CA\u30B9\u4E2D\u30AD\u30E3\u30E9\u7D39\u4ECB"
+  }, CHARA_TYPES.map(c => /*#__PURE__*/React.createElement("div", {
+    key: c.id,
+    style: refLine
+  }, /*#__PURE__*/React.createElement("span", null, c.label), /*#__PURE__*/React.createElement("span", {
+    style: {
+      color: "#f7b731"
+    }
+  }, c.hint))), /*#__PURE__*/React.createElement("div", {
+    style: {
+      marginTop: 6,
+      fontSize: 11,
+      color: "#888"
+    }
+  }, "\u203B\u7F8E\u99AC\u306F5001G\u4EE5\u964D\u3067\u51FA\u73FE\u7387\u30A2\u30C3\u30D7")), /*#__PURE__*/React.createElement(RefSection, {
+    title: "\u30AB\u30D0\u30CD\u30EA\u30A2\u30BF\u30C3\u30AF(\u7121\u540D)\u30BE\u30ED\u76EE"
+  }, KABANERI_ATK_ITEMS.map(a => /*#__PURE__*/React.createElement("div", {
+    key: a.id,
+    style: refLine
+  }, /*#__PURE__*/React.createElement("span", null, a.label), /*#__PURE__*/React.createElement("span", {
+    style: {
+      color: "#f7b731"
+    }
+  }, a.hint)))), /*#__PURE__*/React.createElement(RefSection, {
+    title: "\u7372\u5F97\u679A\u6570\u8868\u793A"
+  }, SPECIAL_DISPLAY.map(d => /*#__PURE__*/React.createElement("div", {
+    key: d.id,
+    style: refLine
+  }, /*#__PURE__*/React.createElement("span", null, d.label), /*#__PURE__*/React.createElement("span", {
+    style: {
+      color: "#f7b731"
+    }
+  }, d.hint)))), /*#__PURE__*/React.createElement(RefSection, {
+    title: "\u30A2\u30A4\u30C6\u30E0\u304F\u3058"
+  }, OMIKUJI_ITEMS.map(o => /*#__PURE__*/React.createElement("div", {
+    key: o.id,
+    style: refLine
+  }, /*#__PURE__*/React.createElement("span", null, o.label), /*#__PURE__*/React.createElement("span", {
+    style: {
+      color: "#f7b731"
+    }
+  }, o.hint))), /*#__PURE__*/React.createElement("div", {
+    style: {
+      marginTop: 6,
+      fontSize: 11,
+      color: "#888"
+    }
+  }, "\u203B\u671D\u30A4\u30C11\u301C5\u56DE\u76EE\u30FB5\u306E\u500D\u6570\u56DE\u306F\u7279\u6B8A\u793A\u5506\u51FA\u3084\u3059\u3044")), /*#__PURE__*/React.createElement(RefSection, {
+    title: "CZ\u51FA\u73FE\u7387(\u5B9F\u6226\u5024)"
+  }, /*#__PURE__*/React.createElement("div", {
+    style: refLine
+  }, /*#__PURE__*/React.createElement("span", null, "CZ\u30C8\u30FC\u30BF\u30EB"), /*#__PURE__*/React.createElement("span", null, "\u8A2D1: 1/251.5 / \u8A2D6: 1/225.5"))), /*#__PURE__*/React.createElement(RefSection, {
+    title: "3\u5468\u671F\u76EE\u30DC\u30FC\u30CA\u30B9\u5F53\u9078\u7387(\u5B9F\u6226\u5024)"
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 12,
+      fontWeight: 700,
+      color: "#ccc",
+      marginBottom: 4
+    }
+  }, "\u77ED\u7E2E\u306A\u3057\uFF08\u901A\u5E38\u6642\uFF09"), /*#__PURE__*/React.createElement("div", {
+    style: refLine
+  }, /*#__PURE__*/React.createElement("span", null, "\u8A2D\u5B9A1"), /*#__PURE__*/React.createElement("span", null, "0% (0/5)")), /*#__PURE__*/React.createElement("div", {
+    style: refLine
+  }, /*#__PURE__*/React.createElement("span", null, "\u8A2D\u5B9A6"), /*#__PURE__*/React.createElement("span", null, "33.3% (1/3)")), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 12,
+      fontWeight: 700,
+      color: "#ccc",
+      marginTop: 8,
+      marginBottom: 4
+    }
+  }, "\u77ED\u7E2E\u3042\u308A\uFF08\u30EA\u30BB\u5F8C/\u99C6\u3051\u629C\u3051\u5F8C/\u666F\u4E4BST\u5F8C\uFF09"), /*#__PURE__*/React.createElement("div", {
+    style: refLine
+  }, /*#__PURE__*/React.createElement("span", null, "\u8A2D\u5B9A1"), /*#__PURE__*/React.createElement("span", null, "50.0% (4/8)")), /*#__PURE__*/React.createElement("div", {
+    style: refLine
+  }, /*#__PURE__*/React.createElement("span", null, "\u8A2D\u5B9A6"), /*#__PURE__*/React.createElement("span", null, "66.7% (2/3)")), /*#__PURE__*/React.createElement("div", {
+    style: {
+      marginTop: 6,
+      fontSize: 11,
+      color: "#888"
+    }
+  }, "\u203B\u77ED\u7E2E\u306A\u3057\u6642\u306E\u65B9\u304C\u8A2D\u5B9A\u5DEE\u304C\u5927\u304D\u304F\u5224\u5225\u306B\u6709\u52B9")), /*#__PURE__*/React.createElement(RefSection, {
+    title: "\u666F\u4E4BST\u30EB\u30FC\u30D7"
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 11,
+      color: "#aaa",
+      lineHeight: 1.8
+    }
+  }, "\u666F\u4E4BST\u7D42\u4E86\u5F8C\u306E\u6B21\u56DE\u666F\u4E4BST\u7A81\u5165\u7387\u306B\u8A2D\u5B9A\u5DEE\u3002", /*#__PURE__*/React.createElement("br", null), "\u9AD8\u8A2D\u5B9A\u307B\u3069\u30EB\u30FC\u30D7\u3057\u3084\u3059\u3044\u3002")), /*#__PURE__*/React.createElement(RefSection, {
+    title: "\u99FF\u57CE\u30DC\u30FC\u30CA\u30B9\u4E2D 3000pt\u632F\u5206"
+  }, /*#__PURE__*/React.createElement("div", {
+    style: refLine
+  }, /*#__PURE__*/React.createElement("span", null, "\u8A2D\u5B9A1"), /*#__PURE__*/React.createElement("span", null, "1.2%")), /*#__PURE__*/React.createElement("div", {
+    style: refLine
+  }, /*#__PURE__*/React.createElement("span", null, "\u8A2D\u5B9A2\u301C5"), /*#__PURE__*/React.createElement("span", null, "2.0%")), /*#__PURE__*/React.createElement("div", {
+    style: refLine
+  }, /*#__PURE__*/React.createElement("span", null, "\u8A2D\u5B9A6"), /*#__PURE__*/React.createElement("span", null, "2.3%"))), /*#__PURE__*/React.createElement("div", {
+    style: {
+      marginTop: 20,
+      padding: 12,
+      background: "rgba(255,255,255,0.03)",
+      borderRadius: 8,
+      fontSize: 10,
+      color: "#666",
+      lineHeight: 1.6
+    }
+  }, "\u203B\u6570\u5024\u306F\u30E1\u30FC\u30AB\u30FC\u516C\u8868\u5024\u304A\u3088\u3073\u5C02\u9580\u30E1\u30C7\u30A3\u30A2(\u306A\u306A\u5FB9\u3001\u3061\u3087\u3093\u307C\u308A\u3059\u305F\u3001\u30D1\u30C1\u30DE\u30AC\u30B9\u30ED\u30DE\u30AC\u3001\u4E00\u6483\u7B49)\u306E\u5B9F\u6226\u5024\u30FB\u72EC\u81EA\u8ABF\u67FB\u3092\u5143\u306B\u3057\u3066\u3044\u307E\u3059\u3002\u5B9F\u969B\u306E\u8A2D\u5B9A\u5224\u5225\u306F\u8907\u6570\u8981\u7D20\u3092\u7DCF\u5408\u7684\u306B\u5224\u65AD\u3057\u3066\u304F\u3060\u3055\u3044\u3002"))), showReset && /*#__PURE__*/React.createElement("div", {
+    style: {
+      position: "fixed",
+      inset: 0,
+      background: "rgba(0,0,0,0.8)",
+      zIndex: 200,
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      padding: 20
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      background: "#1a1a2e",
+      borderRadius: 16,
+      padding: 24,
+      maxWidth: 320,
+      width: "100%",
+      border: "1px solid rgba(231,76,60,0.3)"
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 16,
+      fontWeight: 800,
+      color: "#e74c3c",
+      marginBottom: 12,
+      textAlign: "center"
+    }
+  }, "\u30C7\u30FC\u30BF\u3092\u30EA\u30BB\u30C3\u30C8\u3057\u307E\u3059\u304B\uFF1F"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 12,
+      color: "#888",
+      textAlign: "center",
+      marginBottom: 20
+    }
+  }, "\u5168\u3066\u306E\u30AB\u30A6\u30F3\u30C8\u30C7\u30FC\u30BF\u304C\u521D\u671F\u5316\u3055\u308C\u307E\u3059\u3002\u3053\u306E\u64CD\u4F5C\u306F\u53D6\u308A\u6D88\u305B\u307E\u305B\u3093\u3002"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      gap: 10
+    }
+  }, /*#__PURE__*/React.createElement("button", {
+    onClick: () => setShowReset(false),
+    style: {
+      flex: 1,
+      padding: 12,
+      borderRadius: 8,
+      border: "1px solid #333",
+      background: "transparent",
+      color: "#aaa",
+      fontSize: 14,
+      fontWeight: 700,
+      cursor: "pointer"
+    }
+  }, "\u30AD\u30E3\u30F3\u30BB\u30EB"), /*#__PURE__*/React.createElement("button", {
+    onClick: handleReset,
+    style: {
+      flex: 1,
+      padding: 12,
+      borderRadius: 8,
+      border: "none",
+      background: "#e74c3c",
+      color: "#fff",
+      fontSize: 14,
+      fontWeight: 700,
+      cursor: "pointer"
+    }
+  }, "\u30EA\u30BB\u30C3\u30C8")))));
+}
+
+// ── Helper Components ─────────────────────────────────────────
+function StatBox({
+  label,
+  value,
+  ref1,
+  ref2
+}) {
+  return /*#__PURE__*/React.createElement("div", {
+    style: {
+      background: "#111",
+      borderRadius: 8,
+      padding: 10
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 10,
+      color: "#888"
+    }
+  }, label), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 18,
+      fontWeight: 800,
+      color: "#fff",
+      fontFamily: "monospace"
+    }
+  }, value), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 9,
+      color: "#555",
+      marginTop: 4
+    }
+  }, ref1), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 9,
+      color: "#555"
+    }
+  }, ref2));
+}
+function RefTable({
+  title,
+  headers,
+  rows
+}) {
+  return /*#__PURE__*/React.createElement("div", {
+    style: {
+      marginBottom: 16
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 14,
+      fontWeight: 700,
+      color: "#fff",
+      marginBottom: 6,
+      paddingLeft: 4
+    }
+  }, title), /*#__PURE__*/React.createElement("table", {
+    style: {
+      width: "100%",
+      borderCollapse: "collapse",
+      fontSize: 12
+    }
+  }, /*#__PURE__*/React.createElement("thead", null, /*#__PURE__*/React.createElement("tr", null, headers.map((h, i) => /*#__PURE__*/React.createElement("th", {
+    key: i,
+    style: {
+      padding: "6px 8px",
+      background: "#1a1a2e",
+      color: "#888",
+      fontWeight: 600,
+      textAlign: "center",
+      borderBottom: "1px solid #333"
+    }
+  }, h)))), /*#__PURE__*/React.createElement("tbody", null, rows.map((row, i) => /*#__PURE__*/React.createElement("tr", {
+    key: i,
+    style: {
+      background: i === 5 ? "rgba(231,76,60,0.1)" : "transparent"
+    }
+  }, row.map((cell, j) => /*#__PURE__*/React.createElement("td", {
+    key: j,
+    style: {
+      padding: "6px 8px",
+      textAlign: "center",
+      borderBottom: "1px solid #1a1a2e",
+      color: i === 5 ? "#e74c3c" : "#ccc",
+      fontWeight: j === 0 ? 700 : 400,
+      fontFamily: j > 0 ? "monospace" : "inherit"
+    }
+  }, cell)))))));
+}
+function RefSection({
+  title,
+  children
+}) {
+  return /*#__PURE__*/React.createElement("div", {
+    style: {
+      marginBottom: 16
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 14,
+      fontWeight: 700,
+      color: "#fff",
+      marginBottom: 6,
+      paddingLeft: 4
+    }
+  }, title), /*#__PURE__*/React.createElement("div", {
+    style: {
+      background: "rgba(255,255,255,0.03)",
+      borderRadius: 8,
+      padding: 8
+    }
+  }, children));
+}
+const quickStat = {
+  flex: 1,
+  minWidth: 70,
+  padding: "6px 8px",
+  background: "rgba(0,0,0,0.3)",
+  borderRadius: 8,
+  display: "flex",
+  flexDirection: "column",
+  alignItems: "center",
+  gap: 2
+};
+const refLine = {
+  display: "flex",
+  justifyContent: "space-between",
+  padding: "4px 4px",
+  borderBottom: "1px solid rgba(255,255,255,0.04)",
+  fontSize: 12
+};
+
+// Mount
+var root = ReactDOM.createRoot(document.getElementById("root"));
+root.render(React.createElement(KabaneriCounter, null));
+</script>
+</body>
+</html>
