@@ -235,7 +235,7 @@ MACHINES.kabaneri = {
   id: "kabaneri",
   name: "甲鉄城のカバネリ",
   subtitle: "海門決戦",
-  icon: "\uD83D\uDE82",
+  icon: "https://kabaneri.com/assets/img/in/character/c_mumei.png",
   accentColor: "#e74c3c",
   themeGradient: "linear-gradient(135deg, #0f0c29 0%, #302b63 50%, #24243e 100%)",
   storageKey: "kabaneri_unato_counter_v1",
@@ -749,7 +749,7 @@ MACHINES.hokuto_tensei2 = {
   id: "hokuto_tensei2",
   name: "\u30B9\u30DE\u30B9\u30ED\u5317\u6597\u306E\u62F3",
   subtitle: "\u8EE2\u751F\u306E\u7AE02",
-  icon: "\u2B50",
+  icon: "https://image.nana-press.com/kaiseki/machine/1059/20251009195554_machine_panel.png",
   accentColor: "#1a6bff",
   themeGradient: "linear-gradient(135deg, #0a0a2e 0%, #1a3a6e 50%, #0d1b3e 100%)",
   storageKey: "slot_counter_hokuto_tensei2_v1",
@@ -1093,7 +1093,9 @@ function MachineSelector({ onSelect }) {
             borderLeft: "4px solid " + m.accentColor
           }
         },
-          React.createElement("div", { style: { fontSize: 36, flexShrink: 0, width: 50, textAlign: "center" } }, m.icon),
+          React.createElement("div", { style: { width: 56, height: 56, flexShrink: 0, borderRadius: 12, overflow: "hidden", background: "#0a0a12" } },
+            React.createElement("img", { src: m.icon, alt: m.name, style: { width: "100%", height: "100%", objectFit: "cover" } })
+          ),
           React.createElement("div", { style: { flex: 1, minWidth: 0 } },
             React.createElement("div", { style: { fontSize: 11, color: m.accentColor, fontWeight: 700, letterSpacing: 1, marginBottom: 2 } }, "SMARTSLOT"),
             React.createElement("div", { style: { fontSize: 16, fontWeight: 900, color: "#fff", lineHeight: 1.3 } }, m.name),
