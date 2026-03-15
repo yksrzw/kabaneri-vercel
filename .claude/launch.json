@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "slot-counter",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": ["serve", "/Users/kkbjp-pc181/TOOLS/slot-counter/kabaneri-vercel/public", "-l", "3456"],
+      "port": 3456
+    }
+  ]
+}
